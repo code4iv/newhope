@@ -10,8 +10,10 @@ license = "MIT"
 rand = "0.3"
 tiny-keccak = "1.1"
 byteorder = "0.5"
+x86intrin = { git = "https://github.com/mayah/x86intrin.git" }
 
 [features]
 default = [ "api" ]
 api = []
 tor = []
+simd = []
