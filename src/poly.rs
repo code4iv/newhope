@@ -361,9 +361,11 @@ pub fn uniform(a: &mut [u16], nonce: &[u8]) {
 
 #[cfg(not(feature = "tor"))]
 #[cfg(feature = "simd")]
-pub fn uniform(a: &mut [u16], nonce: &[u8]) {
+pub fn uniform(aa: &mut [u16], nonce: &[u8]) {
     use ::std::mem::transmute;
     use ::x86intrin::*;
+
+    let mut a: [i32; N] = [0; N];
 
     let zero = mm256_setzero_si256();
     let modulus8 = mm256_set1_epi32(Q as i32);
@@ -427,7 +429,7 @@ pub fn uniform(a: &mut [u16], nonce: &[u8]) {
         pos += 2;
         let r = (val as usize) / Q;
         if r < 5 {
-            a[ctr] = val - (MODULI[r] as u16);
+            a[ctr] = (val - (MODULI[r] as u16)) as i32;
             ctr += 1;
         }
 
@@ -436,6 +438,10 @@ pub fn uniform(a: &mut [u16], nonce: &[u8]) {
             shake128.squeeze(&mut buf[..SHAKE128_RATE]);
             pos = 0;
         }
+    }
+
+    for i in 0..N {
+        aa[i] = a[i] as u16;
     }
 }
 
@@ -578,9 +584,7 @@ fn test_uniform() {
 
     uniform(&mut a, &nonce);
 
-    for i in 0..N {
-        assert_eq!(a[i], output[i]);
-    }
+    assert_eq!(a[..], output[..]);
 }
 
 #[cfg(feature = "tor")]
@@ -592,9 +596,7 @@ fn test_uniform() {
 
     uniform(&mut a, &nonce);
 
-    for i in 0..N {
-        assert_eq!(a[i], output[i]);
-    }
+    assert_eq!(a[..], output[..]);
 }
 
 #[cfg(feature = "tor")]

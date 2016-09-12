@@ -1,8 +1,8 @@
 #![feature(step_by, question_mark)]
 
+#[cfg(feature = "simd")] extern crate x86intrin;
 extern crate rand;
 extern crate byteorder;
-extern crate x86intrin;
 extern crate tiny_keccak;
 
 #[cfg(feature = "tor")] pub mod batcher;
