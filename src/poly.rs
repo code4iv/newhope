@@ -378,31 +378,29 @@ pub fn uniform(a: &mut [u16], nonce: &[u8]) {
     shake128.keccakf();
     shake128.squeeze(&mut buf);
 
-    let mut good = 0;
-    let mut offset = 0;
     while ctr < N - 16 {
-        let (tmp0, tmp1, tmp2);
+        let (mut tmp0, mut tmp1, mut tmp2);
 
         let mut val = [0; 32];
-        val.clone_from_slice(&buf[pos..pos + 256]);
+        val.clone_from_slice(&buf[pos..pos + 32]);
         tmp0 = unsafe { mm256_loadu_si256(&transmute(val)) };
 
         macro_rules! operation {
             ( 1 ) => {
-                tmp1 = mm256_min_epu16(tmp0, modulus16); // TODO
-                tmp1 = mm256_cmpeq_epi16(tmp1, modulus16); // TODO
+                tmp1 = mm256_min_epu16(tmp0, modulus16);
+                tmp1 = mm256_cmpeq_epi16(tmp1, modulus16);
                 tmp2 = mm256_and_si256(tmp1, modulus16);
-                tmp0 = mm256_sub_epi16(tmp0, tmp2); // TODO
+                tmp0 = mm256_sub_epi16(tmp0, tmp2);
             };
             ( 2 ) => {
-                tmp1 = mm256_unpacklo_epi16(tmp0, zero); // TODO
-                tmp2 = mm256_cmpgt_epi32(modulus8, tmp1); // TODO
-                good = mm256_movemask_ps(tmp2.as_m256());
+                tmp1 = mm256_unpacklo_epi16(tmp0, zero);
+                tmp2 = mm256_cmpgt_epi32(modulus8, tmp1);
+                let good = mm256_movemask_ps(tmp2.as_m256());
 
-                offset = good.count_ones();
-                tmp2 = mm256_permutevar8x32_epi32(tmp1, unsafe { transmute(IDX[good as usize]) }); // TODO
+                let offset = good.count_ones();
+                tmp2 = mm256_permutevar8x32_epi32(tmp1, unsafe { transmute(IDX[good as usize]) });
 
-                mm256_storeu_si256(&mut unsafe { transmute(a[ctr]) }, tmp2);
+                unsafe { mm256_storeu_si256(transmute(&mut a[ctr]), tmp2) };
                 ctr += offset as usize;
             };
         }
